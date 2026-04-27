@@ -24,8 +24,9 @@
 <script>
 const pins={"pupil-01":"1234","pupil-02":"2345","pupil-03":"3456"}
 let current
-function login(){let p=document.getElementById('pupil').value;let pin=document.getElementById('pin').value;if(pins[p]!=pin){alert('Wrong PIN');return;}current=p;document.getElementById('app').style.display='block';document.getElementById('title').innerText=p;document.getElementById('link').href='../projects/'+p+'/';}
-function send(){let t=document.getElementById('text').value;let d=JSON.parse(localStorage.getItem('reqs')||'[]');d.push({pupil:current,text:t});localStorage.setItem('reqs',JSON.stringify(d));alert('Sent');}
+let sessionToken
+function login(){let p=document.getElementById('pupil').value;let pin=document.getElementById('pin').value;if(pins[p]!=pin){alert('Wrong PIN');return;}current=p;sessionToken=pin;document.getElementById('app').style.display='block';document.getElementById('title').innerText=p;document.getElementById('link').href='../projects/'+p+'/';}
+async function send(){let t=document.getElementById('text').value;const response=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channelId:current,message:t,sessionToken})});const payload=await response.json();if(!response.ok){alert(payload.error||'Failed to send request');return;}alert('Sent! Issue: '+payload.issueUrl);document.getElementById('text').value='';}
 </script>
 </body>
 </html>
