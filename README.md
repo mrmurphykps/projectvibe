@@ -1,57 +1,44 @@
-# Project Vibe MVP
+# projectvibe MVP backend
 
-A teacher-controlled classroom coding request system for three pupils.
+Lightweight Node/Express backend for PIN authentication with security controls.
 
-This repository is being set up as a GitHub Pages MVP.
+## Security properties implemented
 
-## Submission API
+- Stores only SHA-256 hashed PINs for `pupil-01`, `pupil-02`, `pupil-03`.
+- Never stores or returns plaintext PINs.
+- Per-IP failed-attempt tracking over a rolling 10-minute window.
+- Per-channel failed-attempt tracking over a rolling 10-minute window.
+- Temporary lockouts when failures exceed the threshold.
+- Short-lived sessions via HTTP-only cookies after successful auth.
+- GitHub token is read only from server environment variables and used only server-side.
 
-This repo now includes a lightweight Node server with:
-
-- `POST /api/submit` to accept pupil submissions.
-- `GET /api/submissions` to return audit metadata for the teacher panel.
-
-### `POST /api/submit`
-
-Request body:
-
-```json
-{
-  "channelId": "pupil-01",
-  "message": "Please add a button that changes the page color.",
-  "sessionToken": "1234"
-}
-```
-
-Behavior:
-
-- Validates `channelId` format and session token against channel-specific auth.
-- Sanitizes `message` before processing.
-- Creates a GitHub Issue in `projectvibe/projectvibe` with labels:
-  - `<channelId>` (example `pupil-01`)
-  - `pending-teacher`
-- Uses title format: `[pupil-01] Request: <short summary>`.
-- Includes full prompt in the issue body.
-- Writes audit metadata to `data/submission-audit.json`:
-  - `timestamp`
-  - `channelId`
-  - `issueUrl`
-
-### Environment variables
-
-- `GITHUB_TOKEN` (required): GitHub token with issue write access.
-- `GITHUB_OWNER` (optional): defaults to `projectvibe`.
-- `GITHUB_REPO` (optional): defaults to `projectvibe`.
-- `CHANNEL_SESSION_TOKENS` (optional JSON map):
-
-```json
-{"pupil-01":"1234","pupil-02":"2345","pupil-03":"3456"}
-```
-
-### Run locally
+## Run
 
 ```bash
+npm install
 npm start
 ```
 
-Server defaults to port `3000` (override with `PORT`).
+Then open `http://localhost:8787`.
+
+## Environment variables
+
+- `PORT` (default `8787`)
+- `PUPIL_01_PIN_HASH`, `PUPIL_02_PIN_HASH`, `PUPIL_03_PIN_HASH` (SHA-256 hashes)
+- `MAX_FAILED_ATTEMPTS` (default `5`)
+- `LOCKOUT_MS` (default `600000`)
+- `GITHUB_TOKEN` (server-side only)
+- `GITHUB_REPO` (e.g. `owner/projectvibe`)
+
+Example hash generation:
+
+```bash
+node -e "console.log(require('crypto').createHash('sha256').update('1234').digest('hex'))"
+```
+
+## API summary
+
+- `POST /api/auth/login` `{ channel, pin }`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+- `POST /api/github/issues` `{ title, body }` (requires auth + server GitHub config)

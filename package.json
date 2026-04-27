@@ -1,9 +1,14 @@
 {
   "name": "projectvibe",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Project Vibe MVP",
+  "type": "module",
   "scripts": {
-    "start": "node api-server.js"
+    "start": "node backend/server.js",
+    "check": "node --check backend/server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2"
   }
 }
