@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Pupil</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="card">
+<h2>Pupil Login</h2>
+<select id="pupil">
+<option value="pupil-01">Pupil 01</option>
+<option value="pupil-02">Pupil 02</option>
+<option value="pupil-03">Pupil 03</option>
+</select>
+<input id="pin" placeholder="PIN">
+<button onclick="login()">Login</button>
+</div>
+<div id="app" style="display:none" class="card">
+<h3 id="title"></h3>
+<a id="link" class="button">View Project</a>
+<textarea id="text"></textarea>
+<button onclick="send()">Send Request</button>
+</div>
+<script>
+const pins={"pupil-01":"1234","pupil-02":"2345","pupil-03":"3456"}
+let current
+let sessionToken
+function login(){let p=document.getElementById('pupil').value;let pin=document.getElementById('pin').value;if(pins[p]!=pin){alert('Wrong PIN');return;}current=p;sessionToken=pin;document.getElementById('app').style.display='block';document.getElementById('title').innerText=p;document.getElementById('link').href='../projects/'+p+'/';}
+async function send(){let t=document.getElementById('text').value;const response=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channelId:current,message:t,sessionToken})});const payload=await response.json();if(!response.ok){alert(payload.error||'Failed to send request');return;}alert('Sent! Issue: '+payload.issueUrl);document.getElementById('text').value='';}
+</script>
+</body>
+</html>
