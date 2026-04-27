@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProjectVibe Login</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; max-width: 480px; }
+    label { display: block; margin-top: 1rem; }
+    input, select, button { width: 100%; padding: .6rem; margin-top: .3rem; }
+    #status { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Pupil Login</h1>
+  <form id="loginForm">
+    <label>
+      Channel
+      <select id="channel" required>
+        <option value="pupil-01">pupil-01</option>
+        <option value="pupil-02">pupil-02</option>
+        <option value="pupil-03">pupil-03</option>
+      </select>
+    </label>
+
+    <label>
+      4-digit PIN
+      <input id="pin" type="password" inputmode="numeric" minlength="4" maxlength="4" required />
+    </label>
+
+    <button type="submit">Sign in</button>
+  </form>
+
+  <button id="issueBtn" style="margin-top:1rem" disabled>Create sample GitHub issue</button>
+  <div id="status"></div>
+
+  <script src="./main.js"></script>
+</body>
+</html>
