@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Teacher</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="card">
+<h2>Teacher Dashboard</h2>
+<input id="pin" placeholder="PIN">
+<button onclick="login()">Login</button>
+</div>
+<div id="app" style="display:none"></div>
+<script>
+const teacherPin='9999'
+function login(){if(document.getElementById('pin').value!=teacherPin){alert('Wrong');return;}document.getElementById('app').style.display='block';render();}
+function render(){let d=JSON.parse(localStorage.getItem('reqs')||'[]');let div=document.getElementById('app');div.innerHTML='';d.forEach(r=>{let el=document.createElement('div');let url=`https://github.com/mrmurphykps/projectvibe/issues/new?title=${encodeURIComponent(r.pupil)}&body=${encodeURIComponent(r.text)}`;el.innerHTML=`<p><b>${r.pupil}</b>: ${r.text}</p><a class='button' href='${url}' target='_blank'>Create Issue</a>`;div.appendChild(el);});}
+</script>
+</body>
+</html>
