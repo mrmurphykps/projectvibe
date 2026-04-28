@@ -101,3 +101,9 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   padding: .65rem .8rem;
   text-decoration: none;
 }
+
+.disabled-link {
+  color: var(--muted);
+  pointer-events: none;
+  text-decoration: none;
+}

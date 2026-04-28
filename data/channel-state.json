@@ -1,0 +1,28 @@
+{
+  "channels": {
+    "pupil-01": {
+      "status": "submitted",
+      "submissions": [],
+      "release": {
+        "decision": "hold",
+        "approvedRequestId": null
+      }
+    },
+    "pupil-02": {
+      "status": "submitted",
+      "submissions": [],
+      "release": {
+        "decision": "hold",
+        "approvedRequestId": null
+      }
+    },
+    "pupil-03": {
+      "status": "submitted",
+      "submissions": [],
+      "release": {
+        "decision": "hold",
+        "approvedRequestId": null
+      }
+    }
+  }
+}
