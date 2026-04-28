@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pupil View</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main>
+    <section class="card">
+      <header>
+        <div>
+          <h1 id="channelTitle">pupil-01</h1>
+          <p class="subtitle">One-way submit channel for teacher review.</p>
+        </div>
+        <a id="projectLink" target="_blank" rel="noreferrer">Open published project</a>
+      </header>
+
+      <div class="badges" id="badges"></div>
+      <p class="small" id="statusText"></p>
+
+      <label for="prompt" class="small">Request message</label>
+      <textarea id="prompt" placeholder="Describe what you want to change in your project."></textarea>
+      <div class="row">
+        <button class="primary" id="submitBtn">Submit request</button>
+        <span class="small" id="submitMsg"></span>
+      </div>
+    </section>
+
+    <section class="card small">
+      <p>Routes: <a href="/pupil-01">/pupil-01</a>, <a href="/pupil-02">/pupil-02</a>, <a href="/pupil-03">/pupil-03</a>, <a href="/teacher">/teacher</a></p>
+    </section>
+  </main>
+
+  <script type="module" src="/pupil.js"></script>
+</body>
+</html>
