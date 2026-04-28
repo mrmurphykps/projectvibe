@@ -50,3 +50,22 @@ Channel workflow:
 
 GitHub integration:
 - `POST /api/github/issues` `{ title, body }` (requires auth + server GitHub config)
+
+## GitHub automation workflows
+
+This repo includes three automation workflows:
+
+- `.github/workflows/agent-on-ready-label.yml`
+  - Trigger: issue labeled `ready-for-agent`
+  - Actions: runs integration check (`npm run check`), opens an automation PR, and transitions labels.
+- `.github/workflows/label-transitions.yml`
+  - Trigger: issue/PR events
+  - Actions: auto-transitions issue labels `pending-teacher` → `in-progress` → `ready-to-review`.
+- `.github/workflows/merge-and-deploy-on-teacher-approval.yml`
+  - Trigger: approved PR review by configured teacher account
+  - Actions: enables PR auto-merge and optionally triggers deploy webhook.
+
+### Required GitHub configuration
+
+- Repository variable: `TEACHER_GITHUB_LOGIN`
+- Optional repository secret: `DEPLOY_WEBHOOK_URL`
