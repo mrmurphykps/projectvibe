@@ -1,0 +1,93 @@
+name: Agent integration on ready-for-agent
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  run-agent-integration:
+    if: github.event.label.name == 'ready-for-agent'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Transition issue to in-progress
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const labels = (context.payload.issue.labels || []).map((l) => l.name);
+
+            if (labels.includes('pending-teacher')) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number, name: 'pending-teacher' });
+            }
+            if (!labels.includes('in-progress')) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['in-progress'] });
+            }
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run agent integration checks
+        run: npm run check
+
+      - name: Create automation artifact for issue
+        run: |
+          mkdir -p .github/agent-runs
+          cat > .github/agent-runs/issue-${{ github.event.issue.number }}.md <<'EOF'
+          # Agent integration run
+
+          - Issue: #${{ github.event.issue.number }}
+          - Trigger label: ready-for-agent
+          - Run ID: ${{ github.run_id }}
+          - Run URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Timestamp (UTC): $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          EOF
+
+      - name: Open pull request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: agent/issue-${{ github.event.issue.number }}
+          commit-message: "chore(agent): integration run for issue #${{ github.event.issue.number }}"
+          title: "chore(agent): integration output for issue #${{ github.event.issue.number }}"
+          body: |
+            Automated agent integration run for #${{ github.event.issue.number }}.
+
+            ## What this PR includes
+            - Agent integration checks (`npm run check`)
+            - Recorded run metadata in `.github/agent-runs/issue-${{ github.event.issue.number }}.md`
+
+            Closes #${{ github.event.issue.number }}
+          labels: |
+            ready-to-review
+
+      - name: Transition issue to ready-to-review
+        if: steps.create_pr.outputs.pull-request-number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.issue.number;
+            const labels = (context.payload.issue.labels || []).map((l) => l.name);
+
+            if (labels.includes('in-progress')) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number, name: 'in-progress' });
+            }
+            if (!labels.includes('ready-to-review')) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: ['ready-to-review'] });
+            }
