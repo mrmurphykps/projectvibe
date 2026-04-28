@@ -81,6 +81,15 @@ function requireSession(req, res, next) {
   return next();
 }
 
+
+app.get(['/pupil-01', '/pupil-02', '/pupil-03'], (_req, res) => {
+  res.sendFile('pupil.html', { root: 'public' });
+});
+
+app.get('/teacher', (_req, res) => {
+  res.sendFile('teacher.html', { root: 'public' });
+});
+
 app.post('/api/auth/login', (req, res) => {
   const { channel, pin } = req.body || {};
   const ip = getIp(req);

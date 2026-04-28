@@ -1,0 +1,103 @@
+:root {
+  --bg: #f4f7fb;
+  --card: #ffffff;
+  --text: #172033;
+  --muted: #5f6b85;
+  --accent: #2f5cff;
+  --border: #d9e0ef;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+main {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+h1, h2, h3, p { margin: 0; }
+.subtitle { color: var(--muted); margin-top: 0.4rem; }
+
+a { color: var(--accent); font-weight: 600; }
+
+textarea {
+  width: 100%;
+  min-height: 120px;
+  margin-top: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem;
+  font: inherit;
+  resize: vertical;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 0.8rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: #e9eefb;
+  color: var(--text);
+}
+
+button.primary { background: var(--accent); color: white; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: .9rem 0;
+}
+
+.badge {
+  border: 1px solid var(--border);
+  padding: .35rem .55rem;
+  border-radius: 999px;
+  font-size: .85rem;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.badge.active {
+  border-color: #bdcafe;
+  color: #1f3ea8;
+  background: #eef2ff;
+}
+
+.row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.small { font-size: .9rem; color: var(--muted); }
+.inbox-item { border-top: 1px solid var(--border); padding-top: .8rem; margin-top: .8rem; }
+
+.home-links { display:flex; gap:.75rem; margin-top: 1rem; flex-wrap:wrap; }
+.home-link {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .65rem .8rem;
+  text-decoration: none;
+}
