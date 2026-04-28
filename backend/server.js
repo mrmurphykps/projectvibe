@@ -17,6 +17,7 @@ const LOCKOUT_MS = Number(process.env.LOCKOUT_MS || 10 * 60 * 1000);
 const SESSION_COOKIE = 'pv_session';
 const STATUS_ORDER = ['submitted', 'processing', 'ready', 'released'];
 const CHANNELS = ['pupil-01', 'pupil-02', 'pupil-03'];
+const TEACHER_ACCOUNT = 'teacher';
 const RELEASE_DECISIONS = ['approve', 'hold'];
 const STATE_FILE = path.resolve('data/channel-state.json');
 
@@ -24,7 +25,8 @@ const STATE_FILE = path.resolve('data/channel-state.json');
 const PIN_HASHES = {
   'pupil-01': process.env.PUPIL_01_PIN_HASH || '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4',
   'pupil-02': process.env.PUPIL_02_PIN_HASH || 'fe2592b42a727cd5f2f7a8c36b9f3b5978a5d4b0e0f7f5f6764f2f3f2fbf59cf',
-  'pupil-03': process.env.PUPIL_03_PIN_HASH || 'b59c67bf196a4758191e42f76670ceba34a8062bda8d3f9f0f4a5f09f5f6f87f'
+  'pupil-03': process.env.PUPIL_03_PIN_HASH || 'b59c67bf196a4758191e42f76670ceba34a8062bda8d3f9f0f4a5f09f5f6f87f',
+  [TEACHER_ACCOUNT]: process.env.TEACHER_PIN_HASH || '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'
 };
 
 const sessions = new Map();
@@ -129,6 +131,22 @@ function requireSession(req, res, next) {
   return next();
 }
 
+function requireSessionChannelMatch(req, res, next) {
+  if (req.session.channel !== req.params.channel) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  return next();
+}
+
+function requireTeacherSession(req, res, next) {
+  if (req.session.channel !== TEACHER_ACCOUNT) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  return next();
+}
+
 app.get(['/pupil-01', '/pupil-02', '/pupil-03'], (_req, res) => {
   res.sendFile('pupil.html', { root: 'public' });
 });
@@ -142,7 +160,7 @@ app.get('/api/channels/state', async (_req, res) => {
   res.json(state);
 });
 
-app.post('/api/channels/:channel/request', async (req, res) => {
+app.post('/api/channels/:channel/request', requireSession, requireSessionChannelMatch, async (req, res) => {
   const { channel } = req.params;
   const { message } = req.body || {};
 
@@ -169,7 +187,7 @@ app.post('/api/channels/:channel/request', async (req, res) => {
   return res.json({ ok: true, requestId });
 });
 
-app.post('/api/channels/:channel/status', async (req, res) => {
+app.post('/api/channels/:channel/status', requireSession, requireTeacherSession, async (req, res) => {
   const { channel } = req.params;
   const { status } = req.body || {};
 
@@ -186,7 +204,7 @@ app.post('/api/channels/:channel/status', async (req, res) => {
   return res.json({ ok: true });
 });
 
-app.post('/api/channels/:channel/release', async (req, res) => {
+app.post('/api/channels/:channel/release', requireSession, requireTeacherSession, async (req, res) => {
   const { channel } = req.params;
   const { decision } = req.body || {};
 
