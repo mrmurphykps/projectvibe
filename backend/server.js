@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 
@@ -13,6 +15,10 @@ const RATE_WINDOW_MS = 10 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS = Number(process.env.MAX_FAILED_ATTEMPTS || 5);
 const LOCKOUT_MS = Number(process.env.LOCKOUT_MS || 10 * 60 * 1000);
 const SESSION_COOKIE = 'pv_session';
+const STATUS_ORDER = ['submitted', 'processing', 'ready', 'released'];
+const CHANNELS = ['pupil-01', 'pupil-02', 'pupil-03'];
+const RELEASE_DECISIONS = ['approve', 'hold'];
+const STATE_FILE = path.resolve('data/channel-state.json');
 
 // SHA-256 hashes only; no plaintext PINs are stored.
 const PIN_HASHES = {
@@ -32,6 +38,48 @@ const getIp = (req) => req.headers['cf-connecting-ip'] || req.ip || 'unknown';
 const now = () => Date.now();
 
 const hashPin = (pin) => crypto.createHash('sha256').update(String(pin)).digest('hex');
+
+function getInitialChannelState() {
+  return {
+    channels: {
+      'pupil-01': { status: 'submitted', submissions: [], release: { decision: 'hold', approvedRequestId: null } },
+      'pupil-02': { status: 'submitted', submissions: [], release: { decision: 'hold', approvedRequestId: null } },
+      'pupil-03': { status: 'submitted', submissions: [], release: { decision: 'hold', approvedRequestId: null } }
+    }
+  };
+}
+
+async function readChannelState() {
+  try {
+    const raw = await fs.readFile(STATE_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    const initial = getInitialChannelState();
+
+    for (const channel of CHANNELS) {
+      const incoming = parsed?.channels?.[channel] || {};
+      initial.channels[channel].status = STATUS_ORDER.includes(incoming.status)
+        ? incoming.status
+        : initial.channels[channel].status;
+      initial.channels[channel].submissions = Array.isArray(incoming.submissions)
+        ? incoming.submissions
+        : [];
+      const decision = incoming?.release?.decision;
+      initial.channels[channel].release.decision = RELEASE_DECISIONS.includes(decision)
+        ? decision
+        : 'hold';
+      initial.channels[channel].release.approvedRequestId = incoming?.release?.approvedRequestId || null;
+    }
+
+    return initial;
+  } catch {
+    return getInitialChannelState();
+  }
+}
+
+async function writeChannelState(state) {
+  await fs.mkdir(path.dirname(STATE_FILE), { recursive: true });
+  await fs.writeFile(STATE_FILE, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+}
 
 function pruneFailures(record) {
   const cutoff = now() - RATE_WINDOW_MS;
@@ -81,13 +129,82 @@ function requireSession(req, res, next) {
   return next();
 }
 
-
 app.get(['/pupil-01', '/pupil-02', '/pupil-03'], (_req, res) => {
   res.sendFile('pupil.html', { root: 'public' });
 });
 
 app.get('/teacher', (_req, res) => {
   res.sendFile('teacher.html', { root: 'public' });
+});
+
+app.get('/api/channels/state', async (_req, res) => {
+  const state = await readChannelState();
+  res.json(state);
+});
+
+app.post('/api/channels/:channel/request', async (req, res) => {
+  const { channel } = req.params;
+  const { message } = req.body || {};
+
+  if (!CHANNELS.includes(channel)) {
+    return res.status(400).json({ error: 'Unknown channel' });
+  }
+
+  if (typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  const state = await readChannelState();
+  const requestId = crypto.randomUUID();
+
+  state.channels[channel].submissions.unshift({
+    id: requestId,
+    message: message.trim(),
+    submittedAt: new Date().toISOString()
+  });
+  state.channels[channel].status = 'submitted';
+  state.channels[channel].release.decision = 'hold';
+
+  await writeChannelState(state);
+  return res.json({ ok: true, requestId });
+});
+
+app.post('/api/channels/:channel/status', async (req, res) => {
+  const { channel } = req.params;
+  const { status } = req.body || {};
+
+  if (!CHANNELS.includes(channel)) {
+    return res.status(400).json({ error: 'Unknown channel' });
+  }
+  if (!STATUS_ORDER.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  const state = await readChannelState();
+  state.channels[channel].status = status;
+  await writeChannelState(state);
+  return res.json({ ok: true });
+});
+
+app.post('/api/channels/:channel/release', async (req, res) => {
+  const { channel } = req.params;
+  const { decision } = req.body || {};
+
+  if (!CHANNELS.includes(channel)) {
+    return res.status(400).json({ error: 'Unknown channel' });
+  }
+  if (!RELEASE_DECISIONS.includes(decision)) {
+    return res.status(400).json({ error: 'Invalid decision' });
+  }
+
+  const state = await readChannelState();
+  const latest = state.channels[channel].submissions[0] || null;
+
+  state.channels[channel].release.decision = decision;
+  state.channels[channel].release.approvedRequestId = decision === 'approve' ? latest?.id || null : null;
+
+  await writeChannelState(state);
+  return res.json({ ok: true });
 });
 
 app.post('/api/auth/login', (req, res) => {

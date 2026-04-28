@@ -8,13 +8,17 @@ const titleEl = document.getElementById('channelTitle');
 const linkEl = document.getElementById('projectLink');
 const badgesEl = document.getElementById('badges');
 const statusTextEl = document.getElementById('statusText');
+const releaseNoticeEl = document.getElementById('releaseNotice');
 const submitBtn = document.getElementById('submitBtn');
 const promptEl = document.getElementById('prompt');
 const submitMsgEl = document.getElementById('submitMsg');
 
-function renderStatus() {
-  const state = readState();
-  const status = state.channels[currentChannel].status;
+async function renderStatus() {
+  const state = await readState();
+  const channelState = state.channels[currentChannel];
+  const status = channelState.status;
+  const decision = channelState.release?.decision || 'hold';
+  const hasSubmission = channelState.submissions.length > 0;
 
   badgesEl.innerHTML = '';
   for (const step of statusOrder()) {
@@ -25,24 +29,45 @@ function renderStatus() {
   }
 
   statusTextEl.textContent = `Current status: ${status}`;
+
+  if (decision === 'approve') {
+    linkEl.href = `/projects/${currentChannel}/`;
+    linkEl.textContent = `/projects/${currentChannel}/`;
+    linkEl.classList.remove('disabled-link');
+    linkEl.removeAttribute('aria-disabled');
+    releaseNoticeEl.textContent = 'Latest update is approved and released.';
+  } else {
+    linkEl.removeAttribute('href');
+    linkEl.textContent = 'Awaiting teacher release';
+    linkEl.classList.add('disabled-link');
+    linkEl.setAttribute('aria-disabled', 'true');
+
+    if (hasSubmission) {
+      releaseNoticeEl.textContent = 'A new version exists, but it is on hold until the teacher approves release.';
+    } else {
+      releaseNoticeEl.textContent = 'No updates submitted yet.';
+    }
+  }
 }
 
 titleEl.textContent = currentChannel;
-linkEl.href = `/projects/${currentChannel}/`;
-linkEl.textContent = `/projects/${currentChannel}/`;
 renderStatus();
 
-submitBtn.addEventListener('click', () => {
+submitBtn.addEventListener('click', async () => {
   const message = promptEl.value.trim();
   if (!message) {
     submitMsgEl.textContent = 'Please enter a request first.';
     return;
   }
 
-  submitToChannel(currentChannel, message);
-  promptEl.value = '';
-  submitMsgEl.textContent = 'Submitted to teacher inbox.';
-  renderStatus();
+  try {
+    await submitToChannel(currentChannel, message);
+    promptEl.value = '';
+    submitMsgEl.textContent = 'Submitted to teacher inbox.';
+    await renderStatus();
+  } catch (error) {
+    submitMsgEl.textContent = error.message;
+  }
 });
 
 setInterval(renderStatus, 2000);
