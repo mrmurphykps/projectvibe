@@ -1,0 +1,3 @@
+# Replace `@your-org/teachers` with your actual teacher team/user owners.
+# Enable "Require review from Code Owners" in branch protection on `main`.
+* @your-org/teachers
