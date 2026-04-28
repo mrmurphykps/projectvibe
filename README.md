@@ -1,16 +1,8 @@
-# projectvibe MVP backend
+# projectvibe backend (canonical)
 
-Lightweight Node/Express backend for PIN authentication with security controls.
+`backend/server.js` is the single source of truth for the backend.
 
-## Security properties implemented
-
-- Stores only SHA-256 hashed PINs for `pupil-01`, `pupil-02`, `pupil-03`.
-- Never stores or returns plaintext PINs.
-- Per-IP failed-attempt tracking over a rolling 10-minute window.
-- Per-channel failed-attempt tracking over a rolling 10-minute window.
-- Temporary lockouts when failures exceed the threshold.
-- Short-lived sessions via HTTP-only cookies after successful auth.
-- GitHub token is read only from server environment variables and used only server-side.
+> Legacy `api-server.js` has been removed to prevent split behavior and stale API paths.
 
 ## Run
 
@@ -21,10 +13,17 @@ npm start
 
 Then open `http://localhost:8787`.
 
+## Scripts
+
+- `npm start` → runs canonical backend (`backend/server.js`)
+- `npm run start:backend` → explicit canonical backend start
+- `npm run check` → syntax check for canonical backend
+
 ## Environment variables
 
 - `PORT` (default `8787`)
 - `PUPIL_01_PIN_HASH`, `PUPIL_02_PIN_HASH`, `PUPIL_03_PIN_HASH` (SHA-256 hashes)
+- `TEACHER_PIN_HASH` (SHA-256 hash)
 - `MAX_FAILED_ATTEMPTS` (default `5`)
 - `LOCKOUT_MS` (default `600000`)
 - `GITHUB_TOKEN` (server-side only)
@@ -36,9 +35,18 @@ Example hash generation:
 node -e "console.log(require('crypto').createHash('sha256').update('1234').digest('hex'))"
 ```
 
-## API summary
+## API summary (canonical)
 
+Auth:
 - `POST /api/auth/login` `{ channel, pin }`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
+
+Channel workflow:
+- `GET /api/channels/state`
+- `POST /api/channels/:channel/request` `{ message }` (requires matching session)
+- `POST /api/channels/:channel/status` `{ status }` (teacher session)
+- `POST /api/channels/:channel/release` `{ decision }` (teacher session)
+
+GitHub integration:
 - `POST /api/github/issues` `{ title, body }` (requires auth + server GitHub config)
